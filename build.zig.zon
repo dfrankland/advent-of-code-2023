@@ -1,0 +1,41 @@
+.{
+    .name = "advent-of-code-2023",
+    // This is a [Semantic Version](https://semver.org/).
+    // In a future version of Zig it will be used for package deduplication.
+    .version = "0.0.0",
+
+    // This field is optional.
+    // This is currently advisory only; Zig does not yet do anything
+    // with this value.
+    //.minimum_zig_version = "0.11.0",
+
+    // This field is optional.
+    // Each dependency must either provide a `url` and `hash`, or a `path`.
+    // `zig build --fetch` can be used to fetch all dependencies of a package, recursively.
+    // Once all dependencies are fetched, `zig build` no longer requires
+    // Internet connectivity.
+    .dependencies = .{
+        .mecha = .{
+            .url = "https://github.com/dfrankland/mecha/archive/95e8d079097198dd766a8900ae4c5cfe22f183fa.tar.gz",
+            .hash = "1220676518d100d08e5d3e58744d7dd3e94cda8e62fc77b534c9fd3f16a73ccfe3ab",
+        },
+        .zigfsm = .{
+            .url = "https://github.com/dfrankland/zigfsm/archive/8d13fff48a3a01ad27ce3bf146e8a34c92ebbd4b.tar.gz",
+            .hash = "122065b7714badd3e6393d6fb59118ab6684c933c4792882404e72050e53dc0be673",
+        },
+    },
+
+    .paths = .{
+        // This makes *all* files, recursively, included in this package. It is generally
+        // better to explicitly list the files and directories instead, to insure that
+        // fetching from tarballs, file system paths, and version control all result
+        // in the same contents hash.
+        "",
+        // For example...
+        //"build.zig",
+        //"build.zig.zon",
+        //"src",
+        //"LICENSE",
+        //"README.md",
+    },
+}
