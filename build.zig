@@ -21,6 +21,7 @@ pub fn build(b: *std.Build) void {
 
     const mecha_module = b.dependency("mecha", .{}).module("mecha");
     const zigfsm_module = b.dependency("zigfsm", .{}).module("fsm");
+    const zigstr_module = b.dependency("zigstr", .{}).module("zigstr");
 
     var days = (std.fs.cwd().openDir("./day", std.fs.Dir.OpenDirOptions{ .access_sub_paths = true, .no_follow = false }) catch unreachable).iterate();
     while (days.next() catch unreachable) |day| {
@@ -44,6 +45,7 @@ pub fn build(b: *std.Build) void {
 
         exe.addModule("mecha", mecha_module);
         exe.addModule("zigfsm", zigfsm_module);
+        exe.addModule("zigstr", zigstr_module);
 
         // This declares intent for the executable to be installed into the
         // standard location when the user invokes the "install" step (the default

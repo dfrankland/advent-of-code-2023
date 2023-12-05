@@ -23,6 +23,10 @@
             .url = "https://github.com/dfrankland/zigfsm/archive/8d13fff48a3a01ad27ce3bf146e8a34c92ebbd4b.tar.gz",
             .hash = "122065b7714badd3e6393d6fb59118ab6684c933c4792882404e72050e53dc0be673",
         },
+        .zigstr = .{
+            .url = "https://codeberg.org/dfrankland/zigstr/archive/1208bb627a0722819472e23516f3a6ffa781e245.tar.gz",
+            .hash = "12208501c5b64becf1d91c99df8d26c5615ecdcba57a85f9aa771800d844afd583ce",
+        },
     },
 
     .paths = .{
