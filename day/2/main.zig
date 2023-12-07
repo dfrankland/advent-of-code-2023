@@ -12,12 +12,6 @@ pub const BagCubeColors = enum {
 
 const BagContents = std.EnumMap(BagCubeColors, usize);
 
-const actualBagContents = BagContents.init(.{
-    .red = 12,
-    .blue = 14,
-    .green = 13,
-});
-
 const cubeRevealParser = mecha.combine(.{
     mecha.int(usize, .{ .parse_sign = false }),
     mecha.ascii.char(' ').discard(),
@@ -60,38 +54,33 @@ pub fn main() !void {
 
     var res: usize = 0;
     for (document) |row| {
-        const gameId, const subsets = row;
+        _, const subsets = row;
         defer allocator.free(subsets);
 
-        var validGame = true;
+        var maxBagContents = BagContents.init(.{
+            .red = 0,
+            .blue = 0,
+            .green = 0,
+        });
+
         for (subsets) |subset| {
             defer allocator.free(subset);
 
-            if (!validGame) continue;
-
-            var subsetBagContents = BagContents.init(.{
-                .red = 0,
-                .blue = 0,
-                .green = 0,
-            });
-
             for (subset) |cubeReveal| {
                 const cubeCount, const color = cubeReveal;
-                subsetBagContents.put(color, subsetBagContents.get(color).? + cubeCount);
-            }
-
-            var subsetBagContentsIterator = subsetBagContents.iterator();
-            while (subsetBagContentsIterator.next()) |entry| {
-                if (entry.value.* > actualBagContents.get(entry.key).?) {
-                    validGame = false;
-                    break;
+                if (cubeCount > maxBagContents.get(color).?) {
+                    maxBagContents.put(color, cubeCount);
                 }
             }
         }
 
-        if (validGame) {
-            res = res + gameId;
+        var power: usize = 1;
+        var subsetBagContentsIterator = maxBagContents.iterator();
+        while (subsetBagContentsIterator.next()) |entry| {
+            power = power * entry.value.*;
         }
+
+        res = res + power;
     }
 
     std.debug.print("{any}\n", .{res});
