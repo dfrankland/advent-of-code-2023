@@ -1,6 +1,5 @@
 const std = @import("std");
 const mecha = @import("mecha");
-const Zigstr = @import("zigstr");
 
 const input = @embedFile("./input");
 
