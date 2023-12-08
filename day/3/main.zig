@@ -8,20 +8,20 @@ const partNumberParser = mecha.many(
     .{ .min = 1, .collect = false },
 );
 
-const spaceParser = mecha.ascii.char('.').asStr();
+const gearParser = mecha.ascii.char('*').asStr();
 
 const newLineParser = mecha.ascii.char('\n').asStr();
 
-const symbolParser = mecha.ascii.not(
+const spaceParser = mecha.ascii.not(
     mecha.oneOf(.{
         partNumberParser,
-        spaceParser,
+        gearParser,
         newLineParser,
     }),
 ).asStr();
 
 const ItemType = enum {
-    symbol,
+    gear,
     space,
     partNumber,
 };
@@ -29,13 +29,13 @@ const ItemType = enum {
 const PartNumber = struct { length: u16, value: u16, found: bool = false };
 
 const Item = union(ItemType) {
-    symbol,
+    gear,
     space,
     partNumber: PartNumber,
 };
 
-fn toSymbol(_: std.mem.Allocator, _: []const u8) !Item {
-    return Item.symbol;
+fn toGear(_: std.mem.Allocator, _: []const u8) !Item {
+    return Item.gear;
 }
 
 fn toSpace(_: std.mem.Allocator, _: []const u8) !Item {
@@ -53,7 +53,7 @@ fn toPartNumber(_: std.mem.Allocator, str: []const u8) mecha.Error!Item {
 
 const rowParser = mecha.many(
     mecha.oneOf(.{
-        symbolParser.convert(toSymbol),
+        gearParser.convert(toGear),
         spaceParser.convert(toSpace),
         partNumberParser.convert(toPartNumber),
     }),
@@ -76,8 +76,8 @@ pub fn main() !void {
     // NOTE: `AutoArrayHashMap` isn't really necessary, but it has an order
     // making debugging nicer than `AutoHashMap`.
 
-    var symbolLocations = std.AutoArrayHashMap(usize, std.AutoArrayHashMap(usize, bool)).init(allocator);
-    defer symbolLocations.clearAndFree();
+    var gearLocations = std.AutoArrayHashMap(usize, std.AutoArrayHashMap(usize, bool)).init(allocator);
+    defer gearLocations.clearAndFree();
 
     var partNumberLocations = std.AutoArrayHashMap(usize, std.AutoArrayHashMap(usize, *PartNumber)).init(allocator);
     defer partNumberLocations.clearAndFree();
@@ -86,8 +86,8 @@ pub fn main() !void {
         var x: usize = 0;
         for (row) |*item| {
             switch (item.*) {
-                .symbol => {
-                    const ySet = try symbolLocations.getOrPut(x);
+                .gear => {
+                    const ySet = try gearLocations.getOrPut(x);
                     if (!ySet.found_existing) {
                         const newYSet = std.AutoArrayHashMap(usize, bool).init(allocator);
                         ySet.value_ptr.* = newYSet;
@@ -115,24 +115,27 @@ pub fn main() !void {
     }
 
     var res: usize = 0;
-    var symbolLocationsIterator = symbolLocations.iterator();
-    while (symbolLocationsIterator.next()) |xMapEntry| {
-        const symbolX = xMapEntry.key_ptr.*;
+    var gearLocationsIterator = gearLocations.iterator();
+    while (gearLocationsIterator.next()) |xMapEntry| {
+        const gearX = xMapEntry.key_ptr.*;
         const ySet = xMapEntry.value_ptr.*;
         defer xMapEntry.value_ptr.clearAndFree();
 
         var ySetIterator = ySet.iterator();
         while (ySetIterator.next()) |ySetEntry| {
-            const symbolY = ySetEntry.key_ptr.*;
+            const gearY = ySetEntry.key_ptr.*;
 
-            const xStartInclusive: usize = if (symbolX == 0) 0 else symbolX - 1;
-            const xEndExclusive: usize = symbolX + 2;
-            const yStartInclusive: usize = if (symbolY == 0) 0 else symbolY - 1;
-            const yEndExclusive: usize = symbolY + 2;
+            const xStartInclusive: usize = if (gearX == 0) 0 else gearX - 1;
+            const xEndExclusive: usize = gearX + 2;
+            const yStartInclusive: usize = if (gearY == 0) 0 else gearY - 1;
+            const yEndExclusive: usize = gearY + 2;
+
+            var gearRatioPartNumbers = try std.ArrayList(usize).initCapacity(allocator, 2);
+            defer gearRatioPartNumbers.deinit();
 
             for (xStartInclusive..xEndExclusive) |x| {
                 for (yStartInclusive..yEndExclusive) |y| {
-                    if (y == symbolY and x == symbolX) {
+                    if (y == gearY and x == gearX) {
                         continue;
                     }
 
@@ -140,11 +143,15 @@ pub fn main() !void {
                         if (partNumberLocationsYMap.getPtr(y)) |partNumber| {
                             if (!partNumber.*.found) {
                                 partNumber.*.found = true;
-                                res = res + partNumber.*.value;
+                                try gearRatioPartNumbers.append(partNumber.*.value);
                             }
                         }
                     }
                 }
+            }
+
+            if (gearRatioPartNumbers.items.len == 2) {
+                res += gearRatioPartNumbers.items[0] * gearRatioPartNumbers.items[1];
             }
         }
     }
