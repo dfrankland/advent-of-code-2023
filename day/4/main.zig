@@ -30,7 +30,7 @@ const cardIdParser = mecha.combine(.{
 });
 
 const rowParser = mecha.combine(.{
-    cardIdParser.discard(),
+    cardIdParser,
     mecha.string(":").discard(),
     emptySpaceParser,
     cardNumbersParser,
@@ -41,6 +41,14 @@ const documentParser = mecha.many(
     .{ .min = 1, .separator = mecha.ascii.char('\n').discard() },
 );
 
+fn getOrPutPlusN(cardCounts: *std.AutoHashMap(usize, usize), cardId: usize, n: usize) !void {
+    const cardCountEntry = try cardCounts.getOrPut(cardId);
+    if (!cardCountEntry.found_existing) {
+        cardCountEntry.value_ptr.* = 0;
+    }
+    cardCountEntry.value_ptr.* += n;
+}
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
@@ -49,9 +57,17 @@ pub fn main() !void {
     const document = (try documentParser.parse(allocator, input)).value;
     defer allocator.free(document);
 
-    var res: usize = 0;
+    var cardsWon = std.AutoHashMap(
+        usize,
+        usize,
+    ).init(allocator);
+    defer cardsWon.deinit();
+
     for (document) |row| {
-        const winningNumbersArray, const numbersYouHaveArray = row;
+        const cardId, const numbersLists = row;
+        try getOrPutPlusN(&cardsWon, cardId, 1);
+
+        const winningNumbersArray, const numbersYouHaveArray = numbersLists;
         defer allocator.free(winningNumbersArray);
         defer allocator.free(numbersYouHaveArray);
 
@@ -62,22 +78,20 @@ pub fn main() !void {
             try winningNumbersHashMap.put(winningNumber, true);
         }
 
-        var possibleExponent: ?usize = null;
+        var cardIdWon = cardId;
+        const multiplier = cardsWon.get(cardId).?;
         for (numbersYouHaveArray) |numberYouHave| {
             if (winningNumbersHashMap.contains(numberYouHave)) {
-                possibleExponent = if (possibleExponent) |exponent|
-                    exponent + 1
-                else
-                    0;
+                cardIdWon += 1;
+                try getOrPutPlusN(&cardsWon, cardIdWon, multiplier);
             }
         }
+    }
 
-        const cardPoints: usize = if (possibleExponent) |exponent|
-            std.math.pow(usize, 2, exponent)
-        else
-            0;
-
-        res += cardPoints;
+    var res: usize = 0;
+    var cardsWonValuesIterator = cardsWon.valueIterator();
+    while (cardsWonValuesIterator.next()) |cards| {
+        res += cards.*;
     }
 
     std.debug.print("{any}\n", .{res});
